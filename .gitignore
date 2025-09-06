@@ -1,14 +1,55 @@
-# Virtual Environment
+# ===================================================================
+#   Master .gitignore for Full-Stack Python/React Project
+# ===================================================================
+
+# --- General / Project-Level ---
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+
+# Miscellaneous
+*.local
+*.log
+*.sw?
+
+# Environment variables (ignore all .env files)
+.env
+.env.*
+!.env.example
+
+
+# --- Backend (Python) ---
+# Virtual Environment at the project root
 venv/
 .venv/
 
-# Python cache
-__pycache__/
-*.pyc
+# Python cache files
+backend/__pycache__/
+backend/*.pyc
 
-# IDE / Editor specific
-.vscode/
-.idea/
+# User-uploaded files (do not commit user data to the repo)
+backend/uploads/
 
-# Uploaded files (optional, but good practice for a public repo)
-uploads/
+
+# --- Frontend (Node.js / React) ---
+# Core dependencies folder
+frontend/node_modules/
+
+# Build output
+frontend/dist/
+frontend/dist-ssr/
+
+# Logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/lerna-debug.log*
+
+# Visual Studio files
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
