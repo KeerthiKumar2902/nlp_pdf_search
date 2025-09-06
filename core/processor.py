@@ -1,17 +1,7 @@
-# core/processor.py
-import spacy
+# core/processor.py (Corrected Version)
 import re
-
-# Load the spaCy model once as a global object.
-# This is efficient as it avoids reloading the model on every function call.
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    print("Downloading spaCy model...")
-    from spacy.cli import download
-    download("en_core_web_sm")
-    nlp = spacy.load("en_core_web_sm")
-
+# Import the shared nlp instance from our new models.py file
+from .models import nlp
 
 def preprocess_and_chunk(text: str, chunk_size_sentences: int = 5) -> list[str]:
     """
@@ -24,6 +14,12 @@ def preprocess_and_chunk(text: str, chunk_size_sentences: int = 5) -> list[str]:
     Returns:
         A list of clean text chunks.
     """
+    # This function will now use the imported 'nlp' object
+    if nlp is None:
+        # Handle case where model failed to load
+        print("SpaCy model not available. Cannot process text.")
+        return []
+
     # 1. Basic Cleaning
     text = re.sub(r'\s+', ' ', text).strip()  # Replace multiple whitespaces with a single space
 

@@ -7,3 +7,7 @@ spacy
 sentence-transformers
 scikit-learn
 numpy
+pytextrank
+transformers
+torch
+sentencepiece
