@@ -1,5 +1,6 @@
 # main.py (Final MVP Version)
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware # NEW IMPORT
 import uvicorn
 import os
 import numpy as np
@@ -17,6 +18,21 @@ from core.analysis import extract_entities, extract_keywords, generate_summary #
 UPLOAD_DIRECTORY = "./uploads"
 
 app = FastAPI(title="NLP Search Engine API")
+
+# --- CORS MIDDLEWARE CONFIGURATION ---
+# This is the new section that allows your React app to talk to the backend.
+origins = [
+    "http://localhost:5173", # The default port for Vite React apps
+    "http://localhost:3000", # The default port for Create React App (just in case)
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"], # Allow all methods (GET, POST, etc.)
+    allow_headers=["*"], # Allow all headers
+)
 
 class AnalysisTask(str, Enum):
     ner = "ner"
