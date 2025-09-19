@@ -1,6 +1,5 @@
-// src/components/AnalysisModal.jsx (Final Version)
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+// src/components/AnalysisModal.jsx (Corrected Final Version)
+import React from 'react'; // We don't need useState or useEffect anymore
 
 // A helper for styling NER tags
 const NER_COLORS = {
@@ -12,34 +11,11 @@ const NER_COLORS = {
     DEFAULT: 'bg-gray-500/30 text-gray-300 border border-gray-500',
 };
 
-function AnalysisModal({ isOpen, onClose, textToAnalyze }) {
-    const [analysis, setAnalysis] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
-
-    useEffect(() => {
-        // This effect runs whenever the modal is opened with new text
-        if (isOpen && textToAnalyze) {
-            const performAnalysis = async () => {
-                setIsLoading(true);
-                setAnalysis(null); // Clear previous results
-                try {
-                    const response = await axios.post('http://localhost:8000/analyze/', {
-                        text: textToAnalyze,
-                        tasks: ["ner", "keywords", "summary"]
-                    });
-                    setAnalysis(response.data);
-                } catch (error) {
-                    console.error("Analysis failed:", error);
-                    // You could add an error state here to show in the UI
-                } finally {
-                    setIsLoading(false);
-                }
-            };
-            performAnalysis();
-        }
-    }, [isOpen, textToAnalyze]); // Dependency array: re-run if these change
-
+// This is now a "dumb" component. It just receives data and displays it.
+function AnalysisModal({ isOpen, onClose, analysisData, originalText, error }) {
     if (!isOpen) return null;
+
+    const isLoading = !analysisData && !error;
 
     return (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
@@ -52,16 +28,17 @@ function AnalysisModal({ isOpen, onClose, textToAnalyze }) {
 
                 <div className="p-6 overflow-y-auto">
                     <h4 className="font-bold text-lg mb-2 text-white">Original Text</h4>
-                    <p className="bg-slate-900 p-3 rounded-lg text-slate-300 mb-6 text-sm">{textToAnalyze}</p>
+                    <p className="bg-slate-900 p-3 rounded-lg text-slate-300 mb-6 text-sm">{originalText}</p>
 
                     {isLoading && <p className="text-center text-cyan-400">Analyzing...</p>}
-
-                    {analysis && (
+                    {error && <p className="text-center text-red-400">{error}</p>}
+                    
+                    {analysisData && (
                         <div className="space-y-6">
                             <div>
                                 <h4 className="font-bold text-lg mb-2 text-white">Named Entities (NER)</h4>
                                 <div className="flex flex-wrap gap-2">
-                                    {analysis.ner.length > 0 ? analysis.ner.map((ent, i) => (
+                                    {analysisData.ner.length > 0 ? analysisData.ner.map((ent, i) => (
                                         <span key={i} className={`px-2 py-1 text-xs rounded-md ${NER_COLORS[ent.label] || NER_COLORS.DEFAULT}`}>
                                             {ent.text} <span className="font-semibold">{ent.label}</span>
                                         </span>
@@ -70,17 +47,17 @@ function AnalysisModal({ isOpen, onClose, textToAnalyze }) {
                             </div>
                             <div>
                                 <h4 className="font-bold text-lg mb-2 text-white">Keywords</h4>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <h5 className="text-sm font-semibold text-slate-300 mb-1">Contextual (TextRank)</h5>
                                         <ul className="list-disc list-inside text-slate-400 text-sm">
-                                            {analysis.keywords.textrank.map((kw, i) => <li key={i}>{kw.text}</li>)}
+                                            {analysisData.keywords.textrank.map((kw, i) => <li key={i}>{kw.text}</li>)}
                                         </ul>
                                     </div>
                                     <div>
                                         <h5 className="text-sm font-semibold text-slate-300 mb-1">Statistical (TF-IDF)</h5>
-                                         <ul className="list-disc list-inside text-slate-400 text-sm">
-                                            {analysis.keywords.tfidf.map((kw, i) => <li key={i}>{kw.text}</li>)}
+                                        <ul className="list-disc list-inside text-slate-400 text-sm">
+                                            {analysisData.keywords.tfidf.map((kw, i) => <li key={i}>{kw.text}</li>)}
                                         </ul>
                                     </div>
                                 </div>
@@ -89,11 +66,11 @@ function AnalysisModal({ isOpen, onClose, textToAnalyze }) {
                                 <h4 className="font-bold text-lg mb-2 text-white">Summary</h4>
                                 <div>
                                     <h5 className="text-sm font-semibold text-slate-300 mb-1">Extractive</h5>
-                                    <p className="bg-slate-700 p-3 rounded-lg text-slate-300 text-sm">{analysis.summary.extractive}</p>
+                                    <p className="bg-slate-700 p-3 rounded-lg text-slate-300 text-sm">{analysisData.summary.extractive}</p>
                                 </div>
                                 <div className="mt-4">
                                     <h5 className="text-sm font-semibold text-slate-300 mb-1">Abstractive</h5>
-                                    <p className="bg-slate-700 p-3 rounded-lg text-slate-300 text-sm">{analysis.summary.abstractive}</p>
+                                    <p className="bg-slate-700 p-3 rounded-lg text-slate-300 text-sm">{analysisData.summary.abstractive}</p>
                                 </div>
                             </div>
                         </div>
