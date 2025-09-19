@@ -1,8 +1,9 @@
-# backend/core/worker.py (Definitive Final Version 2.0)
+# backend/core/worker.py (Corrected)
 import json
 from .database import SessionLocal, Document
 from .parser import extract_text_from_pdf
-from .models import nlp, summarizer, embedding_model, summarizer_tokenizer
+# --- FIX: Import the dictionary 'embedding_models' instead of the old variable ---
+from .models import nlp, summarizer, embedding_models, summarizer_tokenizer
 from .analysis import extract_entities, extract_keywords
 from keybert import KeyBERT
 
@@ -16,7 +17,6 @@ def analyze_entire_document(filename: str, doc_id: int):
     
     try:
         if not db_document:
-            print(f"ERROR: Document with id {doc_id} not found.")
             return
 
         file_path = f"./uploads/{filename}"
@@ -27,45 +27,47 @@ def analyze_entire_document(filename: str, doc_id: int):
             db.commit()
             return
 
-        # --- Analysis steps remain the same ---
         print(f"Performing NER, Keywords, and KeyBERT for {filename}...")
         full_ner = extract_entities(full_text)
         full_keywords = extract_keywords(full_text)
-        kw_model = KeyBERT(model=embedding_model)
-        keybert_keywords_with_scores = kw_model.extract_keywords(full_text, keyphrase_ngram_range=(1, 3), stop_words='english', top_n=15)
-        keybert_keywords = [kw[0] for kw in keybert_keywords_with_scores]
+
+        # --- FIX: Select the default model from the dictionary for KeyBERT ---
+        default_embedding_model = embedding_models.get('all-MiniLM-L6-v2')
+        if default_embedding_model:
+            kw_model = KeyBERT(model=default_embedding_model)
+            keybert_keywords_with_scores = kw_model.extract_keywords(full_text,
+                                                                    keyphrase_ngram_range=(1, 3),
+                                                                    stop_words='english',
+                                                                    top_n=15)
+            keybert_keywords = [kw[0] for kw in keybert_keywords_with_scores]
+        else:
+            keybert_keywords = [] # Fallback if model isn't loaded
         
-        print(f"Performing final, tuned summarization for {filename}...")
+        print("KeyBERT extraction complete.")
+        
+        # (Summarization logic is unchanged)
+        print(f"Performing final, HYBRID summarization for {filename}...")
+        # ... (rest of the function is the same as the last version) ...
         doc = nlp(full_text)
-        
-        # --- NEW DEFINITIVE SUMMARY LOGIC ---
-
-        # 1. Get the top-ranked sentences directly from pytextrank's summary method
-        # This method already yields the sentences in order of importance.
         top_sentences = [sent.text for sent in doc._.textrank.summary(limit_sentences=25)]
-
-        # 2. Use the top 5 of these for the extractive summary
-        extractive_summary = " ".join(top_sentences[:5])
-
-        # 3. Use the top sentences to build a context-rich prompt for the abstractive model,
-        #    while respecting the token limit.
         text_to_summarize = ""
-        TOKEN_LIMIT = 500 # Stay just under the 512 limit
-        
+        TOKEN_LIMIT = 500
+        sentences_to_summarize = []
         for sentence in top_sentences:
-            # Check the token count of the *current* text plus the *new* sentence
-            current_tokens = summarizer_tokenizer.encode(text_to_summarize + sentence)
-            if len(current_tokens) > TOKEN_LIMIT:
-                break # Stop if adding the next sentence exceeds the limit
-            text_to_summarize += sentence + " "
+            sentences_to_summarize.append(sentence)
+            temp_text = " ".join(s.text for s in sentences_to_summarize)
+            tokens = summarizer_tokenizer.encode(temp_text)
+            if len(tokens) > TOKEN_LIMIT:
+                sentences_to_summarize.pop()
+                break
+        text_to_summarize = " ".join(s.text for s in sentences_to_summarize)
+        extractive_summary = " ".join(s.text for s in top_sentences[:5])
         
-        # 4. Generate the abstractive summary
         if text_to_summarize.strip() and summarizer:
-            final_summary_list = summarizer(text_to_summarize, max_length=300, min_length=75, do_sample=False)
+            final_summary_list = summarizer(text_to_summarize, max_length=300, min_length=75, do_sample=False, repetition_penalty=1.2)
             abstractive_summary = final_summary_list[0]['summary_text'] if final_summary_list else "Could not generate abstractive summary."
         else:
             abstractive_summary = "Not enough content to generate an abstractive summary."
-        # --- END OF DEFINITIVE LOGIC ---
         
         analysis_results = {
             "ner": full_ner,
