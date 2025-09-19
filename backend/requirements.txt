@@ -11,3 +11,7 @@ pytextrank
 transformers
 torch
 sentencepiece
+sqlalchemy
+pydantic-settings
+python-dotenv
+keybert
