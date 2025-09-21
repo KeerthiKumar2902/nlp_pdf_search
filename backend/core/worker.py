@@ -1,9 +1,8 @@
-# backend/core/worker.py (Final Version with Upgraded Extractive Summary)
+# backend/core/worker.py (Final Locked-in Version)
 import json
 from .database import SessionLocal, Document
 from .parser import extract_text_from_pdf
 from .models import nlp, summarizer, embedding_models, summarizer_tokenizer
-# --- Import our NEW summarizer ---
 from .analysis import extract_entities, extract_keywords, generate_semantic_extractive_summary
 from keybert import KeyBERT
 
@@ -24,6 +23,7 @@ def analyze_entire_document(filename: str, doc_id: int):
             db.commit()
             return
 
+        # --- NER, Keywords, and KeyBERT (Unchanged) ---
         print(f"Performing NER, Keywords, and KeyBERT for {filename}...")
         full_ner = extract_entities(full_text)
         full_keywords = extract_keywords(full_text)
@@ -34,28 +34,31 @@ def analyze_entire_document(filename: str, doc_id: int):
             keybert_keywords_with_scores = kw_model.extract_keywords(full_text, keyphrase_ngram_range=(1, 3), stop_words='english', top_n=15)
             keybert_keywords = [kw[0] for kw in keybert_keywords_with_scores]
         
-        print(f"Performing summarization for {filename}...")
+        print(f"Performing final summarization for {filename}...")
         
-        # === THIS IS THE UPGRADED LOGIC ===
-        # 1. Use our new, smarter function for the extractive summary, asking for 8 sentences
+        # === Extractive Summary (Using our best method) ===
         extractive_summary = generate_semantic_extractive_summary(full_text, num_sentences=12)
 
-        # 2. The abstractive summary logic remains the same (intro + conclusion)
-        intro_text = full_text[:2000]
-        conclusion_text = full_text[-2000:]
-        text_to_summarize = intro_text + "\n\n...[middle of document]...\n\n" + conclusion_text
-        
-        tokens = summarizer_tokenizer.encode(text_to_summarize)
-        if len(tokens) > 512:
-            tokens = tokens[:510]
-        truncated_text = summarizer_tokenizer.decode(tokens, skip_special_tokens=True)
-        
+        # === Abstractive Summary (Using the robust "Intro + Conclusion" method) ===
         abstractive_summary = "Could not generate abstractive summary."
-        if summarizer and truncated_text.strip():
-            final_summary_list = summarizer(truncated_text, max_length=300, min_length=75, do_sample=False, repetition_penalty=1.2)
+        if summarizer and summarizer_tokenizer:
+            intro_text = full_text[:2000]
+            conclusion_text = full_text[-2000:]
+            
+            prompt = f"Based on the following introduction and conclusion from a long document, please write a comprehensive, fluent summary paragraph that captures the main arguments and themes.\n\nINTRODUCTION:\n{intro_text}\n\nCONCLUSION:\n{conclusion_text}"
+
+            tokens = summarizer_tokenizer.encode(prompt)
+            if len(tokens) > 1024:
+                tokens = tokens[:1020]
+            truncated_prompt = summarizer_tokenizer.decode(tokens, skip_special_tokens=True)
+
+            final_summary_list = summarizer(truncated_prompt, 
+                                            max_length=400,
+                                            min_length=100, 
+                                            do_sample=False,
+                                            repetition_penalty=1.2)
             if final_summary_list:
                 abstractive_summary = final_summary_list[0]['summary_text']
-        # === END OF UPGRADED LOGIC ===
         
         analysis_results = {
             "ner": full_ner,

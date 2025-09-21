@@ -30,7 +30,7 @@ except Exception as e:
 summarizer = None
 summarizer_tokenizer = None
 try:
-    summarizer_model_name = "google/pegasus-xsum"
+    summarizer_model_name = "facebook/bart-large-cnn"
     summarizer = pipeline("summarization", model=summarizer_model_name)
     summarizer_tokenizer = AutoTokenizer.from_pretrained(summarizer_model_name)
     print(f"Summarization model '{summarizer_model_name}' and its tokenizer loaded successfully.")
