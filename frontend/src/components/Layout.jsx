@@ -1,5 +1,5 @@
-// src/components/Layout.jsx
-import { Outlet } from 'react-router-dom';
+// src/components/Layout.jsx (Updated with Link)
+import { Outlet, Link } from 'react-router-dom'; // 1. Import the Link component
 
 function Layout() {
   return (
@@ -7,13 +7,17 @@ function Layout() {
       {/* Header */}
       <header className="bg-slate-800 shadow-md">
         <nav className="container mx-auto px-6 py-4">
-          <h1 className="text-2xl font-bold text-cyan-400">NLP Document Query Engine</h1>
+          {/* 2. Wrap the title with a Link to the homepage "/" */}
+          <Link to="/">
+            <h1 className="text-2xl font-bold text-cyan-400 hover:text-cyan-300 transition">
+              NLP Document Query Engine
+            </h1>
+          </Link>
         </nav>
       </header>
 
       {/* Main Content Area */}
       <main className="flex-grow container mx-auto px-6 py-8 flex items-center justify-center">
-        {/* The Outlet will render the specific page component (e.g., HomePage) */}
         <Outlet />
       </main>
 
