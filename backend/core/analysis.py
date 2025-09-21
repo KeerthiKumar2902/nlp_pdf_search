@@ -2,6 +2,9 @@
 import spacy
 from .models import nlp, summarizer # Import our shared spaCy model instance
 from sklearn.feature_extraction.text import TfidfVectorizer
+from .models import nlp, embedding_models
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 
 def extract_entities(text: str) -> list[dict]:
     """
@@ -127,3 +130,41 @@ def generate_summary(text: str, num_extractive_sentences: int = 3) -> dict:
             results["abstractive"] = "Could not be generated."
     
     return results
+
+def generate_semantic_extractive_summary(full_text: str, num_sentences: int = 7) -> str:
+    """
+    Generates a coherent extractive summary by finding sentences closest to the document's central meaning.
+    """
+    if nlp is None or not embedding_models:
+        return "Models not available for summary."
+
+    model = embedding_models.get('all-MiniLM-L6-v2')
+    if not model:
+        return "Embedding model not found."
+
+    doc = nlp(full_text)
+    # Get all sentences that have a reasonable length
+    sentences = [sent.text for sent in doc.sents if len(sent.text.split()) > 5] 
+    
+    if len(sentences) < num_sentences:
+        return " ".join(sentences) # Return all if document is too short
+
+    # 1. Get embeddings for all sentences
+    sentence_embeddings = model.encode(sentences)
+    
+    # 2. Calculate the centroid (average vector of all sentences)
+    centroid = np.mean(sentence_embeddings, axis=0)
+    
+    # 3. Calculate similarity of each sentence to the centroid
+    similarities = cosine_similarity(sentence_embeddings, centroid.reshape(1, -1))
+    
+    # 4. Get the indices of the top N most similar sentences
+    top_indices = np.argsort(similarities.flatten())[::-1][:num_sentences]
+    
+    # 5. Sort these top indices to maintain original document order for readability
+    top_indices_sorted = sorted(top_indices)
+    
+    # 6. Join the sentences to form the final, coherent summary
+    summary = " ".join([sentences[i] for i in top_indices_sorted])
+    
+    return summary
