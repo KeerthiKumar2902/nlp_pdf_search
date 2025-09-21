@@ -1,7 +1,7 @@
-// src/components/AnalysisModal.jsx (Corrected Final Version)
-import React from 'react'; // We don't need useState or useEffect anymore
+// src/components/AnalysisModal.jsx (Final Version with Portal)
+import React from 'react';
+import ReactDOM from 'react-dom'; // 1. IMPORT ReactDOM for the portal
 
-// A helper for styling NER tags
 const NER_COLORS = {
     PERSON: 'bg-blue-500/30 text-blue-300 border border-blue-500',
     ORG: 'bg-green-500/30 text-green-300 border border-green-500',
@@ -11,14 +11,20 @@ const NER_COLORS = {
     DEFAULT: 'bg-gray-500/30 text-gray-300 border border-gray-500',
 };
 
-// This is now a "dumb" component. It just receives data and displays it.
 function AnalysisModal({ isOpen, onClose, analysisData, originalText, error }) {
     if (!isOpen) return null;
 
     const isLoading = !analysisData && !error;
 
-    return (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+    // Helper for rendering keyword lists
+    const renderKeywords = (keywordList) => {
+        if (!keywordList || keywordList.length === 0) return <li>No keywords found.</li>;
+        return keywordList.map((kw, i) => <li key={i}>{kw.text}</li>);
+    };
+
+    // 2. WRAP the entire component's JSX in ReactDOM.createPortal
+    return ReactDOM.createPortal(
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="absolute inset-0" onClick={onClose}></div>
             <div className="relative bg-slate-800 rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
                 <div className="flex justify-between items-center p-4 border-b border-slate-700">
@@ -47,18 +53,14 @@ function AnalysisModal({ isOpen, onClose, analysisData, originalText, error }) {
                             </div>
                             <div>
                                 <h4 className="font-bold text-lg mb-2 text-white">Keywords</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <h5 className="text-sm font-semibold text-slate-300 mb-1">Contextual (TextRank)</h5>
-                                        <ul className="list-disc list-inside text-slate-400 text-sm">
-                                            {analysisData.keywords.textrank.map((kw, i) => <li key={i}>{kw.text}</li>)}
-                                        </ul>
+                                        <ul className="list-disc list-inside text-slate-400 text-sm">{renderKeywords(analysisData.keywords?.textrank)}</ul>
                                     </div>
                                     <div>
                                         <h5 className="text-sm font-semibold text-slate-300 mb-1">Statistical (TF-IDF)</h5>
-                                        <ul className="list-disc list-inside text-slate-400 text-sm">
-                                            {analysisData.keywords.tfidf.map((kw, i) => <li key={i}>{kw.text}</li>)}
-                                        </ul>
+                                        <ul className="list-disc list-inside text-slate-400 text-sm">{renderKeywords(analysisData.keywords?.tfidf)}</ul>
                                     </div>
                                 </div>
                             </div>
@@ -66,18 +68,19 @@ function AnalysisModal({ isOpen, onClose, analysisData, originalText, error }) {
                                 <h4 className="font-bold text-lg mb-2 text-white">Summary</h4>
                                 <div>
                                     <h5 className="text-sm font-semibold text-slate-300 mb-1">Extractive</h5>
-                                    <p className="bg-slate-700 p-3 rounded-lg text-slate-300 text-sm">{analysisData.summary.extractive}</p>
+                                    <p className="bg-slate-700 p-3 rounded-lg text-slate-300 text-sm">{analysisData.summary?.extractive}</p>
                                 </div>
                                 <div className="mt-4">
                                     <h5 className="text-sm font-semibold text-slate-300 mb-1">Abstractive</h5>
-                                    <p className="bg-slate-700 p-3 rounded-lg text-slate-300 text-sm">{analysisData.summary.abstractive}</p>
+                                    <p className="bg-slate-700 p-3 rounded-lg text-slate-300 text-sm">{analysisData.summary?.abstractive}</p>
                                 </div>
                             </div>
                         </div>
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root') // This tells React where to "teleport" the modal
     );
 }
 
