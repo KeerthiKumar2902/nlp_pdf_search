@@ -99,14 +99,44 @@ async def process_document(filename: str, background_tasks: BackgroundTasks, db:
     
     return {"message": "...", "filename": filename, "doc_id": db_document.id, "status": db_document.status}
 
+# In backend/main.py, replace the existing get_document_status function with this:
+
 @app.get("/document/{filename}/status", response_model=DocumentStatusResponse)
 async def get_document_status(filename: str, db: Session = Depends(get_db)):
-    # ... (This endpoint is unchanged)
+    """
+    Polls for the status of a document's full analysis.
+    """
+    print(f"Polling status for: {filename}")
+    
     db_document = db.query(database.Document).filter(database.Document.filename == filename).first()
+
     if not db_document:
         raise HTTPException(status_code=404, detail="Document not found.")
-    parsed_results = json.loads(db_document.analysis_results) if db_document.status == "complete" and db_document.analysis_results else None
-    return DocumentStatusResponse.from_orm(db_document, {'analysis_results': parsed_results})
+
+    parsed_results = None
+    if db_document.status == "complete" and db_document.analysis_results:
+        # Safely parse the JSON string from the database
+        try:
+            parsed_results = json.loads(db_document.analysis_results)
+        except json.JSONDecodeError:
+            print(f"Error decoding JSON for document {filename}")
+            # This will ensure the app doesn't crash if the JSON is malformed
+            parsed_results = {"error": "Failed to decode analysis results."}
+
+
+    # --- THIS IS THE DEFINITIVE FIX for Pydantic V2 ---
+    # 1. Manually create a clean dictionary from the database object's attributes.
+    response_data = {
+        "doc_id": db_document.id,
+        "filename": db_document.filename,
+        "status": db_document.status,
+        "created_at": db_document.created_at,
+        "analysis_results": parsed_results # Use our safely parsed results
+    }
+    
+    # 2. Use the dictionary to create and return the Pydantic response model.
+    #    This is the modern and most robust way to do this.
+    return DocumentStatusResponse(**response_data)
 
 # --- UPDATED /search ENDPOINT ---
 @app.get("/search/{filename}")
