@@ -1,4 +1,4 @@
-// src/pages/DocumentOverviewPage.jsx (Final Version)
+// src/pages/DocumentOverviewPage.jsx (Updated)
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
@@ -11,6 +11,7 @@ function DocumentOverviewPage() {
   const [status, setStatus] = useState('loading');
   const [analysis, setAnalysis] = useState(null);
 
+  // ... (useEffect hook for polling remains unchanged) ...
   useEffect(() => {
     const pollStatus = async () => {
       try {
@@ -43,8 +44,10 @@ function DocumentOverviewPage() {
     });
   }, [filename]);
 
+
   return (
     <div className="w-full">
+      {/* ... (Loading and Failed status JSX remains unchanged) ... */}
       {(status === 'loading' || status === 'processing') && (
         <div className="flex flex-col items-center justify-center text-center p-8 bg-slate-700/50 rounded-lg">
           <svg className="animate-spin h-10 w-10 text-cyan-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -63,6 +66,7 @@ function DocumentOverviewPage() {
         </div>
       )}
 
+
       {status === 'complete' && analysis && (
         <div className="space-y-8">
           <div className="p-6 bg-slate-900/50 rounded-lg">
@@ -71,7 +75,10 @@ function DocumentOverviewPage() {
           </div>
           <div className="p-6 bg-slate-900/50 rounded-lg">
             <h3 className="text-xl font-bold text-cyan-400 mb-4">Keywords & Keyphrases</h3>
-            <KeywordsDisplay keywords={analysis.keywords} />
+            
+            {/* THIS IS THE ONLY LINE THAT CHANGES */}
+            <KeywordsDisplay keywords={analysis.keywords} keybertKeywords={analysis.keybert_keywords} />
+
           </div>
           <div className="p-6 bg-slate-900/50 rounded-lg">
             <h3 className="text-xl font-bold text-cyan-400 mb-4">Named Entities</h3>
