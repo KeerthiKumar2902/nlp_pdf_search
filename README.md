@@ -1,6 +1,3 @@
-Here is a comprehensive, professional `README.md` file for your project. This file is designed to be clear, easy to follow, and provide all the necessary information for someone to understand and reproduce your work, directly addressing your evaluation criteria.
-
------
 
 # NLP PDF Search & Analysis Engine
 
