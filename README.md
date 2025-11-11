@@ -3,8 +3,12 @@
 
 This project is a full-stack, intelligent document workspace that allows you to upload PDF documents, perform deep semantic search, and generate a comprehensive NLP analysis report. It's built with a modern Python (FastAPI) backend and a React frontend.
 
-\![Screenshot of the NLP Search Engine application]
-*(**Note:** You should add a screenshot of your application here\!)*
+<img width="1871" height="846" alt="image" src="https://github.com/user-attachments/assets/c5107cae-5bb9-4619-abb0-35fcab12f257" />
+<img width="1090" height="641" alt="image" src="https://github.com/user-attachments/assets/0288f973-52b3-4d96-9011-a8c71d740d9e" />
+<img width="1090" height="463" alt="image" src="https://github.com/user-attachments/assets/54a13a2a-0917-4bb8-a102-d8305bcca9a0" />
+<img width="1090" height="590" alt="image" src="https://github.com/user-attachments/assets/a075795f-c22c-4eee-9c2d-2fc6d0057592" />
+
+
 
 -----
 
